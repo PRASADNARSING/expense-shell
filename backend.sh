@@ -101,4 +101,4 @@ VALIDATE $? "Enabling backend"
 systemctl restart backend &>>$LOG_FILE_NAME
 VALIDATE $? "Starting Backend"
 
-echo "Script execution completed at: $TIMESTAMP" &>>$LOG_FILE_NAME
+echo "Script execution completed at: $TIMESTAMP" &>>$LOG_FILE_NAM

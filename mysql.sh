@@ -4,10 +4,10 @@
 
 
 USERID=$(id -u)
-R="\e[31m"
-G="\e[32m"
-Y="\e[33m"
-N="\e[0m"
+R="\e[31m"  # Red for errors
+G="\e[32m"  # Green for success
+Y="\e[33m"  # Yellow for warnings
+N="\e[0m"   # Reset color
 
 LOGS_FOLDER="/var/log/expense-logs"
 LOG_FILE=$(echo $0 | cut -d "." -f1 )

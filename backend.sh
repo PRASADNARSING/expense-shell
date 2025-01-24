@@ -1,15 +1,26 @@
 #!/bin/bash
+#mysql.expense.ltd
+#mysql -h mysql.expense.ltd -uroot -pExpenseApp@1 < /app/schema/backend.sql &>>$LOG_FILE_NAME
+#cp /home/ec2-user/expense-shell/backend.service
+
 
 USERID=$(id -u)
-R="\e[31m"
-G="\e[32m"
-Y="\e[33m"
-N="\e[0m"
+R="\e[31m"  # Red for errors
+G="\e[32m"  # Green for success
+Y="\e[33m"  # Yellow for warnings
+N="\e[0m"   # Reset color
 
 LOGS_FOLDER="/var/log/expense-logs"
 LOG_FILE=$(echo $0 | cut -d "." -f1 )
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 LOG_FILE_NAME="$LOGS_FOLDER/$LOG_FILE-$TIMESTAMP.log"
+
+# Create logs folder if it doesn't exist
+if [ ! -d "$LOGS_FOLDER" ]; then
+    mkdir -p "$LOGS_FOLDER"
+    echo "Directory $LOGS_FOLDER created."
+fi
+
 
 VALIDATE(){
     if [ $1 -ne 0 ]
@@ -33,6 +44,7 @@ echo "Script started executing at: $TIMESTAMP" &>>$LOG_FILE_NAME
 
 CHECK_ROOT
 
+#Disable existing Node.js module and enable Node.js 20
 dnf module disable nodejs -y &>>$LOG_FILE_NAME
 VALIDATE $? "Disabling existing default NodeJS"
 
@@ -51,9 +63,11 @@ else
     echo -e "expense user already exists ... $Y SKIPPING $N"
 fi
 
+# Create application directory
 mkdir -p /app &>>$LOG_FILE_NAME
 VALIDATE $? "Creating app directory"
 
+# Download and extract backend
 curl -o /tmp/backend.zip https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip &>>$LOG_FILE_NAME
 VALIDATE $? "Downloading backend"
 
@@ -66,9 +80,10 @@ VALIDATE $? "unzip backend"
 npm install &>>$LOG_FILE_NAME
 VALIDATE $? "Installing dependencies"
 
+# Copy backend service file to systemd directory
 cp /home/ec2-user/expense-shell/backend.service /etc/systemd/system/backend.service
 
-# Prepare MySQL Schema
+# # Install MySQL client and prepare schema
 
 dnf install mysql -y &>>$LOG_FILE_NAME
 VALIDATE $? "Installing MySQL Client"
@@ -76,6 +91,7 @@ VALIDATE $? "Installing MySQL Client"
 mysql -h mysql.expense.ltd -uroot -pExpenseApp@1 < /app/schema/backend.sql &>>$LOG_FILE_NAME
 VALIDATE $? "Setting up the transactions schema and tables"
 
+# Reload systemd and start backend service
 systemctl daemon-reload &>>$LOG_FILE_NAME
 VALIDATE $? "Daemon Reload"
 
@@ -84,3 +100,5 @@ VALIDATE $? "Enabling backend"
 
 systemctl restart backend &>>$LOG_FILE_NAME
 VALIDATE $? "Starting Backend"
+
+echo "Script execution completed at: $TIMESTAMP" &>>$LOG_FILE_NAME

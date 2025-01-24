@@ -1,4 +1,7 @@
 #!/bin/bash
+#mysql -h mysql.expense.ltd -u root -pExpenseApp@1 -e 'show databases;' &>>$LOG_FILE_NAME
+#mysql.expense.ltd
+
 
 USERID=$(id -u)
 R="\e[31m"
@@ -10,6 +13,12 @@ LOGS_FOLDER="/var/log/expense-logs"
 LOG_FILE=$(echo $0 | cut -d "." -f1 )
 TIMESTAMP=$(date +%Y-%m-%d-%H-%M-%S)
 LOG_FILE_NAME="$LOGS_FOLDER/$LOG_FILE-$TIMESTAMP.log"
+
+# Create logs folder if it doesn't exist
+if [ ! -d "$LOGS_FOLDER" ]; then
+    mkdir -p "$LOGS_FOLDER"
+    echo "Directory $LOGS_FOLDER created."
+fi
 
 VALIDATE(){
     if [ $1 -ne 0 ]
@@ -28,20 +37,25 @@ CHECK_ROOT(){
         exit 1 #other than 0
     fi
 }
-
+# Script execution log
 echo "Script started executing at: $TIMESTAMP" &>>$LOG_FILE_NAME
 
+# Check if the script is run as root
 CHECK_ROOT
 
+# Install MySQL Server
 dnf install mysql-server -y &>>$LOG_FILE_NAME
 VALIDATE $? "Installing MySQL Server"
 
+# Enable MySQL service
 systemctl enable mysqld &>>$LOG_FILE_NAME
 VALIDATE $? "Enabling MySQL Server"
 
+# Start MySQL service
 systemctl start mysqld &>>$LOG_FILE_NAME
 VALIDATE $? "Starting MySQL Server"
 
+# Check and set MySQL root password
 mysql -h mysql.expense.ltd -u root -pExpenseApp@1 -e 'show databases;' &>>$LOG_FILE_NAME
 
 if [ $? -ne 0 ]
